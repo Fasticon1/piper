@@ -34,6 +34,22 @@ def main():
         "--resume_from_single_speaker_checkpoint",
         help="For multi-speaker models only. Converts a single-speaker checkpoint to multi-speaker and resumes training",
     )
+    parser.add_argument(
+        "--num-workers",
+        type=int,
+        default=4,
+        help="Number of DataLoader workers (default: 4)",
+    )
+    parser.add_argument(
+        "--use-tensor-cores",
+        action="store_true",
+        help="Use Tensor Cores for improved GPU performance",
+    )
+    parser.add_argument(
+        "--weight-norm",
+        action="store_true",
+        help="Use weight normalization",
+    )
     Trainer.add_argparse_args(parser)
     VitsModel.add_model_specific_args(parser)
     parser.add_argument("--seed", type=int, default=1234)
@@ -80,6 +96,10 @@ def main():
         dict_args["upsample_rates"] = (8, 8, 2, 2)
         dict_args["upsample_initial_channel"] = 512
         dict_args["upsample_kernel_sizes"] = (16, 16, 4, 4)
+
+    if args.use_tensor_cores:
+        torch.set_float32_matmul_precision('high')
+        _LOGGER.debug("Using Tensor Cores for improved GPU performance")
 
     model = VitsModel(
         num_symbols=num_symbols,
